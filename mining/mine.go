@@ -26,7 +26,7 @@ func proofOfWork(header *blockchain.BlockHeader) (bool, uint32) {
 	return false, 0
 }
 
-// Mining yes, let's mining
+// Mine Yes, let's mining
 func Mine() {
 	fmt.Println("Mining ...")
 	genesisBlock := blockchain.GetGenesisBlock()
@@ -47,7 +47,7 @@ func Mine() {
 		if solved {
 			elapsedTime := endTime.Sub(startTime).Seconds()
 			hashPower := float64(nonce) / (elapsedTime * 1000 * 1000)
-			fmt.Printf("Bits: %x ElapsedTime: %.3f s HashPower: %.2f MH Nonce %d \n", bits, elapsedTime, hashPower, nonce)
+			fmt.Printf("Height: %d Bits: %x ElapsedTime: %.3fs HashPower: %.2f MH Nonce %d \n", nextBlock.Height, bits, elapsedTime, hashPower, nonce)
 			prevBlock = nextBlock
 		}
 	}

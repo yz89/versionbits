@@ -166,7 +166,8 @@ func CalcNextRequiredDifficulty(lastNode *BlockNode) uint32 {
 
 	newTargetBits := BigToCompact(newTargetDifficultly)
 
-	fmt.Printf("Adjust Difficulty!! Diff: %s Bits: %x \n", newTargetDifficultly.String(), newTargetBits)
+	fmt.Printf("Adjust Difficulty!! Height: %d->%d ActualTimespan: %ds Diff: %s Bits: %x \n",
+		firstNode.Height, lastNode.Height, actualTimespan, newTargetDifficultly.String(), newTargetBits)
 
 	return newTargetBits
 }
