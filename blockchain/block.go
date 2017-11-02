@@ -3,20 +3,19 @@ package blockchain
 import (
 	"encoding/binary"
 	"fmt"
-	"math/rand"
 	"time"
 	"versionbits/chainhash"
 )
 
-type blockHeader struct {
+type BlockHeader struct {
 	PrevBlock chainhash.Hash
 	Version   uint32
 	Nonce     uint32
 	Timestamp int64
 }
 
-type blockNode struct {
-	parent    *blockNode
+type BlockNode struct {
+	parent    *BlockNode
 	hash      chainhash.Hash
 	Height    int32
 	Version   int32
@@ -24,7 +23,7 @@ type blockNode struct {
 	Timestamp int64
 }
 
-func (b blockHeader) serialize() []byte {
+func (b BlockHeader) serialize() []byte {
 	var buf [160]byte
 	binary.LittleEndian.PutUint32(buf[0:32], binary.LittleEndian.Uint32(b.PrevBlock.CloneBytes()))
 	binary.LittleEndian.PutUint32(buf[32:64], uint32(b.Version))
@@ -33,26 +32,31 @@ func (b blockHeader) serialize() []byte {
 	return buf[:]
 }
 
-func (b blockHeader) HashBlock() chainhash.Hash {
+func (b BlockHeader) HashBlock() chainhash.Hash {
 	blockBuf := b.serialize()
 	hash := chainhash.HashH(blockBuf)
 	return hash
 }
 
-func (b blockHeader) GenerateNextBlock() blockHeader {
-	var newBlock = blockHeader{
+func (b BlockHeader) GenerateNextBlock() BlockHeader {
+	var newBlock = BlockHeader{
 		PrevBlock: b.HashBlock(),
 		Version:   0,
-		Nonce:     rand.Uint32(),
+		Nonce:     0,
 		Timestamp: time.Now().Unix(),
 	}
 
 	return newBlock
 }
 
-func GetGenesisBlock() blockHeader {
+func (b BlockHeader) SetNonce(nonce uint32) BlockHeader {
+	b.Nonce = nonce
+	return b
+}
+
+func GetGenesisBlock() BlockHeader {
 	zeroHash := chainhash.HashH([]byte{0})
-	var genesisBlock = blockHeader{
+	var genesisBlock = BlockHeader{
 		PrevBlock: zeroHash,
 		Version:   0,
 		Nonce:     0,
