@@ -5,8 +5,18 @@
 package blockchain
 
 import (
+	"fmt"
 	"math/big"
 	"versionbits/chainhash"
+)
+
+const (
+	blocksPerRetarget = uint32(100)
+
+	minRetargetTimespan = 25  // 100 / 4
+	maxRetargetTimespan = 400 // 100 * 4
+
+	targetTimeSpan = 1000 // 100 * 10
 )
 
 var (
@@ -124,4 +134,32 @@ func BigToCompact(n *big.Int) uint32 {
 		compact |= 0x00800000
 	}
 	return compact
+}
+
+func calcNextRequiredDifficulty(lastNode *BlockNode) uint32 {
+	if (lastNode.Height+1)%blocksPerRetarget != 0 {
+		return lastNode.Bits
+	}
+	firstNode := lastNode.RelativeAncestor(blocksPerRetarget - 1)
+	if firstNode == nil {
+		return 0
+	}
+
+	actualTimespan := lastNode.Timestamp - firstNode.Timestamp
+	adjustedTimespan := actualTimespan
+	if adjustedTimespan < minRetargetTimespan {
+		adjustedTimespan = minRetargetTimespan
+	} else if adjustedTimespan > maxRetargetTimespan {
+		adjustedTimespan = maxRetargetTimespan
+	}
+
+	oldTargetDifficultly := CompactToBig(lastNode.Bits)
+	tmpDiff := new(big.Int).Mul(oldTargetDifficultly, big.NewInt(adjustedTimespan))
+	newTargetDifficultly := tmpDiff.Div(tmpDiff, big.NewInt(targetTimeSpan))
+
+	fmt.Println("Difficultly is ", newTargetDifficultly)
+
+	newTargetBits := BigToCompact(newTargetDifficultly)
+
+	return newTargetBits
 }

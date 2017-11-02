@@ -14,15 +14,6 @@ type BlockHeader struct {
 	Timestamp int64
 }
 
-type BlockNode struct {
-	parent    *BlockNode
-	hash      chainhash.Hash
-	Height    int32
-	Version   int32
-	Nonce     uint32
-	Timestamp int64
-}
-
 func (b BlockHeader) serialize() []byte {
 	var buf [160]byte
 	binary.LittleEndian.PutUint32(buf[0:32], binary.LittleEndian.Uint32(b.PrevBlock.CloneBytes()))

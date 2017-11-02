@@ -7,7 +7,7 @@ import (
 )
 
 const (
-	maxNonce uint32 = 0xffffffff
+	maxNonce = ^uint32(0) // 2^32 - 1
 )
 
 func proofOfWork(header blockchain.BlockHeader, difficultyBits uint32) (bool, uint32) {
