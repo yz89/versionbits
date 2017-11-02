@@ -11,12 +11,14 @@ import (
 )
 
 const (
-	blocksPerRetarget = uint32(100)
-
-	minRetargetTimespan = 25  // 100 / 4
+	// blocks count in one retarget
+	blocksPerRetarget = 10
+	// min retarget timespan
+	minRetargetTimespan = 25 // 100 / 4
+	// max retarget timespan
 	maxRetargetTimespan = 400 // 100 * 4
-
-	targetTimeSpan = 1000 // 100 * 10
+	// one retarget timespan period, 10s per block
+	targetTimeSpan = 100 // blocksPerRetarget * 10
 )
 
 var (
@@ -136,12 +138,17 @@ func BigToCompact(n *big.Int) uint32 {
 	return compact
 }
 
-func calcNextRequiredDifficulty(lastNode *BlockNode) uint32 {
+func CalcNextRequiredDifficulty(lastNode *BlockNode) uint32 {
+	// Genesis block.
+	if lastNode == nil {
+		return DefaultBits
+	}
 	if (lastNode.Height+1)%blocksPerRetarget != 0 {
 		return lastNode.Bits
 	}
 	firstNode := lastNode.RelativeAncestor(blocksPerRetarget - 1)
 	if firstNode == nil {
+		fmt.Println("error: bits is 0")
 		return 0
 	}
 
@@ -157,9 +164,9 @@ func calcNextRequiredDifficulty(lastNode *BlockNode) uint32 {
 	tmpDiff := new(big.Int).Mul(oldTargetDifficultly, big.NewInt(adjustedTimespan))
 	newTargetDifficultly := tmpDiff.Div(tmpDiff, big.NewInt(targetTimeSpan))
 
-	fmt.Println("Difficultly is ", newTargetDifficultly)
-
 	newTargetBits := BigToCompact(newTargetDifficultly)
+
+	fmt.Printf("Adjust Difficulty!! Diff: %s Bits: %x \n", newTargetDifficultly.String(), newTargetBits)
 
 	return newTargetBits
 }

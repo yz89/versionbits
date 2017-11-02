@@ -10,8 +10,8 @@ const (
 	maxNonce = ^uint32(0) // 2^32 - 1
 )
 
-func proofOfWork(header *blockchain.BlockHeader, difficultyBits uint32) (bool, uint32) {
-	targetDifficulty := blockchain.CompactToBig(difficultyBits)
+func proofOfWork(header *blockchain.BlockHeader) (bool, uint32) {
+	targetDifficulty := blockchain.CompactToBig(header.Bits)
 	nonce := uint32(0)
 	for ; nonce < maxNonce; nonce++ {
 		header.Nonce = nonce
@@ -35,17 +35,19 @@ func Mine() {
 	prevBlock := genesisBlock
 
 	for {
+		bits := blockchain.CalcNextRequiredDifficulty(prevBlock)
+
 		nextBlock := prevBlock.GenerateNextBlock()
-		// bits 越小难度越大
-		var bits = uint32(0x20000009)
+		nextBlock.Bits = bits
+
 		startTime := time.Now()
 		nextBlockHeader := nextBlock.Header()
-		solved, nonce := proofOfWork(nextBlockHeader, bits)
+		solved, nonce := proofOfWork(nextBlockHeader)
 		endTime := time.Now()
 		if solved {
 			elapsedTime := endTime.Sub(startTime).Seconds()
 			hashPower := float64(nonce) / (elapsedTime * 1000 * 1000)
-			fmt.Printf("ElapsedTime: %.3f s HashPower: %.2f MH Nonce %d \n", elapsedTime, hashPower, nonce)
+			fmt.Printf("Bits: %x ElapsedTime: %.3f s HashPower: %.2f MH Nonce %d \n", bits, elapsedTime, hashPower, nonce)
 			prevBlock = nextBlock
 		}
 	}
