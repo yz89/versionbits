@@ -47,7 +47,7 @@ func Mine() {
 		if solved {
 			elapsedTime := endTime.Sub(startTime).Seconds()
 			hashPower := float64(nonce) / (elapsedTime * 1000 * 1000)
-			fmt.Printf("Height: %d Bits: %x ElapsedTime: %.3f s HashPower: %.2f MH Nonce %d \n", nextBlock.Height, bits, elapsedTime, hashPower, nonce)
+			fmt.Printf("Height: %d Version: %b Bits: %x ElapsedTime: %.3fs HashPower: %.2f MH Nonce %d \n", nextBlock.Height, nextBlock.Version, bits, elapsedTime, hashPower, nonce)
 			prevBlock = nextBlock
 		}
 	}

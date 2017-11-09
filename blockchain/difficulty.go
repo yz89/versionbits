@@ -11,17 +11,24 @@ import (
 )
 
 const (
+	// one block timespan
+	blockTimespan = 1
+
 	// blocks count in one retarget
-	blocksPerRetarget = 10
-	// min retarget timespan
-	minRetargetTimespan = 25 // 100 / 4
-	// max retarget timespan
-	maxRetargetTimespan = 400 // 100 * 4
-	// one retarget timespan period, 10s per block
-	targetTimeSpan = 100 // blocksPerRetarget * 10
+	blocksPerRetarget = 100
+
+	// adjust factor
+	adjustFactor = 4
 )
 
 var (
+	// one retarget timespan period
+	targetTimespan = int64(blocksPerRetarget * blockTimespan)
+	// min retarget timespan
+	minRetargetTimespan = int64(targetTimespan / adjustFactor)
+	// max retarget timespan
+	maxRetargetTimespan = int64(targetTimespan * adjustFactor)
+
 	// bigOne is 1 represented as a big.Int.  It is defined here to avoid
 	// the overhead of creating it multiple times.
 	bigOne = big.NewInt(1)
@@ -162,7 +169,7 @@ func CalcNextRequiredDifficulty(lastNode *BlockNode) uint32 {
 
 	oldTargetDifficultly := CompactToBig(lastNode.Bits)
 	tmpDiff := new(big.Int).Mul(oldTargetDifficultly, big.NewInt(adjustedTimespan))
-	newTargetDifficultly := tmpDiff.Div(tmpDiff, big.NewInt(targetTimeSpan))
+	newTargetDifficultly := tmpDiff.Div(tmpDiff, big.NewInt(targetTimespan))
 
 	newTargetBits := BigToCompact(newTargetDifficultly)
 
