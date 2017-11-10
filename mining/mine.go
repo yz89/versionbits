@@ -15,6 +15,7 @@ var (
 	chSolved   = make(chan *blockchain.BlockNode)
 	chNewBlock = make(chan uint32)
 	chain      Chain
+	wg         sync.WaitGroup
 )
 
 type Miner struct {
@@ -36,26 +37,33 @@ func (c *Chain) tip() *blockchain.BlockNode {
 }
 
 func (c *Chain) addBest(bestBlock *blockchain.BlockNode) bool {
-	res := false
+	ok := false
 	c.stateLock.Lock()
 	if bestBlock.Parent == nil || (bestBlock.Parent.Hash == c.tipBlock.Hash && bestBlock.Height == c.tipBlock.Height+1) {
 		c.tipBlock = bestBlock
-		res = true
+		ok = true
 	}
 	c.stateLock.Unlock()
-	return res
+	return ok
 }
 
-func solveBlock(node *blockchain.BlockNode) bool {
+func solveBlock(node *blockchain.BlockNode, ticker *time.Ticker) bool {
 	header := node.Header()
 	targetDifficulty := blockchain.CompactToBig(header.Bits)
 	nonce := uint32(0)
 	for ; nonce < maxNonce; nonce++ {
-		bestBlock := chain.tip()
-		if bestBlock.Hash != node.Parent.Hash {
-			// 当前工作不是在最长链上挖，停止，进入下一轮
-			return false
+
+		// 定时检查当前工作是否在最长链上挖
+		select {
+		case <-ticker.C:
+			bestBlock := chain.tip()
+			if bestBlock.Hash != node.Parent.Hash {
+				// 没有在最长链上挖，停止，重新获取最新块
+				return false
+			}
+		default:
 		}
+
 		header.Nonce = nonce
 		hash := header.HashBlock()
 		bigIntHash := blockchain.HashToBig(&hash)
@@ -69,19 +77,25 @@ func solveBlock(node *blockchain.BlockNode) bool {
 	return false
 }
 
-func mine() {
+func mine(minerID uint32) {
 	for {
 		bestBlock := chain.tip()
 		nextBlock := bestBlock.GenerateNextBlock()
+		ticker := time.NewTicker(50 * time.Millisecond)
+
 		startTime := time.Now()
-		solvedBlock := solveBlock(nextBlock)
+		solvedBlock := solveBlock(nextBlock, ticker)
 		endTime := time.Now()
 
 		if solvedBlock {
-			chain.addBest(nextBlock)
-			elapsedTime := endTime.Sub(startTime).Seconds()
-			hashPower := float64(nextBlock.Nonce) / (elapsedTime * 1000 * 1000)
-			fmt.Printf("%s Height: %d Version: %b Bits: %x ElapsedTime: %.3fs HashPower: %.2f MH Nonce %d \n", nextBlock.Hash, nextBlock.Height, nextBlock.Version, nextBlock.Bits, elapsedTime, hashPower, nextBlock.Nonce)
+			ok := chain.addBest(nextBlock)
+			if ok {
+				elapsedTime := endTime.Sub(startTime).Seconds()
+				hashPower := float64(nextBlock.Nonce) / (elapsedTime * 1000 * 1000)
+				fmt.Printf("%d %s Height: %d Version: %b Bits: %x ElapsedTime: %.3fs HashPower: %.2f MH Nonce %d \n", minerID, nextBlock.Hash, nextBlock.Height, nextBlock.Version, nextBlock.Bits, elapsedTime, hashPower, nextBlock.Nonce)
+			} else {
+				fmt.Printf("%d %s Height: %d Abandon!! \n", minerID, nextBlock.Hash, nextBlock.Height)
+			}
 		}
 	}
 }
@@ -94,5 +108,12 @@ func Start() {
 
 	chain.addBest(genesisBlock)
 
-	mine()
+	wg.Add(1)
+
+	go mine(1)
+	go mine(2)
+	go mine(3)
+	go mine(4)
+
+	wg.Wait()
 }

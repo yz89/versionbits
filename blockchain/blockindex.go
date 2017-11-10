@@ -78,7 +78,7 @@ func (node *BlockNode) GenerateNextBlock() *BlockNode {
 		PrevBlock:  node.Hash,
 		MerkleRoot: chainhash.HashH(transactions),
 		Version:    0,
-		Timestamp:  0,
+		Timestamp:  time.Now().Unix(),
 		Nonce:      0,
 		Bits:       bits,
 	}
