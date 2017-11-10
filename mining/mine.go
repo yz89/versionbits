@@ -14,37 +14,13 @@ const (
 var (
 	chSolved   = make(chan *blockchain.BlockNode)
 	chNewBlock = make(chan uint32)
-	chain      Chain
+	chain      blockchain.Chain
 	wg         sync.WaitGroup
 )
 
 type Miner struct {
 	ID               uint32
 	chNewBlockHeight chan uint32
-}
-
-type Chain struct {
-	stateLock sync.RWMutex
-	tipBlock  *blockchain.BlockNode
-}
-
-func (c *Chain) tip() *blockchain.BlockNode {
-	c.stateLock.Lock()
-	tipBlock := c.tipBlock
-	c.stateLock.Unlock()
-
-	return tipBlock
-}
-
-func (c *Chain) addBest(bestBlock *blockchain.BlockNode) bool {
-	ok := false
-	c.stateLock.Lock()
-	if bestBlock.Parent == nil || (bestBlock.Parent.Hash == c.tipBlock.Hash && bestBlock.Height == c.tipBlock.Height+1) {
-		c.tipBlock = bestBlock
-		ok = true
-	}
-	c.stateLock.Unlock()
-	return ok
 }
 
 func solveBlock(node *blockchain.BlockNode, ticker *time.Ticker) bool {
@@ -56,7 +32,7 @@ func solveBlock(node *blockchain.BlockNode, ticker *time.Ticker) bool {
 		// 定时检查当前工作是否在最长链上挖
 		select {
 		case <-ticker.C:
-			bestBlock := chain.tip()
+			bestBlock := chain.Tip()
 			if bestBlock.Hash != node.Parent.Hash {
 				// 没有在最长链上挖，停止，重新获取最新块
 				return false
@@ -79,16 +55,16 @@ func solveBlock(node *blockchain.BlockNode, ticker *time.Ticker) bool {
 
 func mine(minerID uint32) {
 	for {
-		bestBlock := chain.tip()
+		bestBlock := chain.Tip()
 		nextBlock := bestBlock.GenerateNextBlock()
-		ticker := time.NewTicker(50 * time.Millisecond)
+		ticker := time.NewTicker(100 * time.Millisecond)
 
 		startTime := time.Now()
 		solvedBlock := solveBlock(nextBlock, ticker)
 		endTime := time.Now()
 
 		if solvedBlock {
-			ok := chain.addBest(nextBlock)
+			ok := chain.AddBest(nextBlock)
 			if ok {
 				elapsedTime := endTime.Sub(startTime).Seconds()
 				hashPower := float64(nextBlock.Nonce) / (elapsedTime * 1000 * 1000)
@@ -106,7 +82,7 @@ func Start() {
 	genesisBlock := blockchain.GetGenesisBlock()
 	fmt.Println("Genesis Block: ", genesisBlock.Height, genesisBlock.Version, genesisBlock.Bits, genesisBlock.Nonce)
 
-	chain.addBest(genesisBlock)
+	chain.AddBest(genesisBlock)
 
 	wg.Add(1)
 
