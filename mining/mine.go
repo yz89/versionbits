@@ -2,10 +2,8 @@ package mining
 
 import (
 	"fmt"
-	"math/rand"
 	"time"
 	"versionbits/blockchain"
-	"versionbits/chainhash"
 )
 
 const (
@@ -22,11 +20,7 @@ type Miner struct {
 	chNewBlockHeight chan uint32
 }
 
-func (m Miner) solveBlock(node blockchain.BlockNode) {
-	// simulate different transactions collection
-	transactions := []byte{byte(rand.Intn(127)), byte(rand.Intn(127)), byte(rand.Intn(127)), byte(rand.Intn(127))}
-	node.MerkleRoot = chainhash.HashH(transactions)
-
+func (m Miner) solveBlock(node *blockchain.BlockNode) {
 	header := node.Header()
 
 	// fmt.Println(m.ID, header.HashBlock(), transactions)
@@ -43,7 +37,7 @@ func (m Miner) solveBlock(node blockchain.BlockNode) {
 			node.Hash = hash
 			node.Nonce = nonce
 
-			chSolved <- &node
+			chSolved <- node
 			return
 		}
 	}
@@ -59,14 +53,11 @@ func Mine() {
 	prevBlock := genesisBlock
 
 	for {
-		bits := blockchain.CalcNextRequiredDifficulty(prevBlock)
-
 		nextBlock := prevBlock.GenerateNextBlock()
-		nextBlock.Bits = bits
 
 		miner1 := Miner{ID: 1, chNewBlockHeight: make(chan uint32)}
 
-		go miner1.solveBlock(*nextBlock)
+		go miner1.solveBlock(nextBlock)
 
 		startTime := time.Now()
 		solvedBlock, ok := <-chSolved
@@ -79,7 +70,7 @@ func Mine() {
 		if solvedBlock != nil {
 			elapsedTime := endTime.Sub(startTime).Seconds()
 			hashPower := float64(solvedBlock.Nonce) / (elapsedTime * 1000 * 1000)
-			fmt.Printf("%s Height: %d Version: %b Bits: %x ElapsedTime: %.3fs HashPower: %.2f MH Nonce %d \n", solvedBlock.Hash, solvedBlock.Height, solvedBlock.Version, bits, elapsedTime, hashPower, solvedBlock.Nonce)
+			fmt.Printf("%s Height: %d Version: %b Bits: %x ElapsedTime: %.3fs HashPower: %.2f MH Nonce %d \n", solvedBlock.Hash, solvedBlock.Height, solvedBlock.Version, solvedBlock.Bits, elapsedTime, hashPower, solvedBlock.Nonce)
 			prevBlock = solvedBlock
 		}
 	}

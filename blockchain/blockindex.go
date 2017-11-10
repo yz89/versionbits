@@ -1,6 +1,7 @@
 package blockchain
 
 import (
+	"math/rand"
 	"time"
 	"versionbits/chainhash"
 )
@@ -67,13 +68,19 @@ func (node *BlockNode) RelativeAncestor(distance uint32) *BlockNode {
 }
 
 func (node *BlockNode) GenerateNextBlock() *BlockNode {
+	// simulate different transactions collection
+	transactions := []byte{byte(rand.Intn(127)), byte(rand.Intn(127)), byte(rand.Intn(127)), byte(rand.Intn(127))}
+
+	// calculate next difficulty
+	bits := CalcNextRequiredDifficulty(node)
+
 	var nextBlockHeader = &BlockHeader{
-		PrevBlock:  node.Hash,        // constant
-		MerkleRoot: chainhash.Hash{}, // mutalbe
-		Version:    0,                // constant
-		Timestamp:  0,                // mutalbe
-		Nonce:      0,                // mutalbe
-		Bits:       node.Bits,        // constant
+		PrevBlock:  node.Hash,
+		MerkleRoot: chainhash.HashH(transactions),
+		Version:    0,
+		Timestamp:  0,
+		Nonce:      0,
+		Bits:       bits,
 	}
 
 	nextBlockNode := newBlockNode(nextBlockHeader, node.Height+1)
