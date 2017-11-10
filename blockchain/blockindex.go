@@ -7,7 +7,7 @@ import (
 )
 
 type BlockNode struct {
-	parent     *BlockNode
+	Parent     *BlockNode
 	Hash       chainhash.Hash
 	MerkleRoot chainhash.Hash
 	Height     uint32
@@ -38,8 +38,8 @@ func newBlockNode(blockHeader *BlockHeader, height uint32) *BlockNode {
 func (node *BlockNode) Header() *BlockHeader {
 	zeroHash := chainhash.Hash{}
 	prevHash := zeroHash
-	if node.parent != nil {
-		prevHash = node.parent.Hash
+	if node.Parent != nil {
+		prevHash = node.Parent.Hash
 	}
 	return &BlockHeader{
 		Version:    node.Version,
@@ -57,7 +57,7 @@ func (node *BlockNode) Ancestor(height uint32) *BlockNode {
 	}
 
 	n := node
-	for ; n != nil && n.Height != height; n = n.parent {
+	for ; n != nil && n.Height != height; n = n.Parent {
 		// Intentionally left blank
 	}
 	return n
@@ -84,7 +84,7 @@ func (node *BlockNode) GenerateNextBlock() *BlockNode {
 	}
 
 	nextBlockNode := newBlockNode(nextBlockHeader, node.Height+1)
-	nextBlockNode.parent = node
+	nextBlockNode.Parent = node
 
 	return nextBlockNode
 }
@@ -101,6 +101,7 @@ func GetGenesisBlock() *BlockNode {
 	}
 
 	genesisNode := newBlockNode(genesisHeader, 0)
+	genesisNode.Parent = nil
 
 	return genesisNode
 }
