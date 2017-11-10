@@ -15,8 +15,6 @@ const (
 var (
 	chSolved   = make(chan *blockchain.BlockNode)
 	chNewBlock = make(chan uint32)
-
-	miners []*Miner
 )
 
 type Miner struct {
@@ -36,12 +34,6 @@ func (m Miner) solveBlock(node blockchain.BlockNode) {
 	targetDifficulty := blockchain.CompactToBig(header.Bits)
 	nonce := uint32(0)
 	for ; nonce < maxNonce; nonce++ {
-		select {
-		case <-m.chNewBlockHeight:
-			return
-		default:
-			// Non-blocking select to fall through
-		}
 		header.Nonce = nonce
 		hash := header.HashBlock()
 		bigIntHash := blockchain.HashToBig(&hash)
@@ -51,18 +43,11 @@ func (m Miner) solveBlock(node blockchain.BlockNode) {
 			node.Hash = hash
 			node.Nonce = nonce
 
-			nextRound(node.Height)
 			chSolved <- &node
 			return
 		}
 	}
 	return
-}
-
-func nextRound(height uint32) {
-	for _, miner := range miners {
-		miner.chNewBlockHeight <- height
-	}
 }
 
 // Mine Yes, let's mining
@@ -80,16 +65,8 @@ func Mine() {
 		nextBlock.Bits = bits
 
 		miner1 := Miner{ID: 1, chNewBlockHeight: make(chan uint32)}
-		miner2 := Miner{ID: 2, chNewBlockHeight: make(chan uint32)}
-		miner3 := Miner{ID: 3, chNewBlockHeight: make(chan uint32)}
-		miner4 := Miner{ID: 4, chNewBlockHeight: make(chan uint32)}
-
-		miners = append(miners, &miner1, &miner2, &miner3, &miner4)
 
 		go miner1.solveBlock(*nextBlock)
-		go miner2.solveBlock(*nextBlock)
-		go miner3.solveBlock(*nextBlock)
-		go miner4.solveBlock(*nextBlock)
 
 		startTime := time.Now()
 		solvedBlock, ok := <-chSolved
@@ -100,7 +77,6 @@ func Mine() {
 		}
 
 		if solvedBlock != nil {
-			miners = make([]*Miner, 0)
 			elapsedTime := endTime.Sub(startTime).Seconds()
 			hashPower := float64(solvedBlock.Nonce) / (elapsedTime * 1000 * 1000)
 			fmt.Printf("%s Height: %d Version: %b Bits: %x ElapsedTime: %.3fs HashPower: %.2f MH Nonce %d \n", solvedBlock.Hash, solvedBlock.Height, solvedBlock.Version, bits, elapsedTime, hashPower, solvedBlock.Nonce)
