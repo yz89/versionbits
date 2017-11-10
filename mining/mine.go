@@ -20,10 +20,8 @@ type Miner struct {
 	chNewBlockHeight chan uint32
 }
 
-func (m Miner) solveBlock(node *blockchain.BlockNode) {
+func solveBlock(node *blockchain.BlockNode) bool {
 	header := node.Header()
-
-	// fmt.Println(m.ID, header.HashBlock(), transactions)
 
 	targetDifficulty := blockchain.CompactToBig(header.Bits)
 	nonce := uint32(0)
@@ -31,22 +29,19 @@ func (m Miner) solveBlock(node *blockchain.BlockNode) {
 		header.Nonce = nonce
 		hash := header.HashBlock()
 		bigIntHash := blockchain.HashToBig(&hash)
-		// fmt.Println(bigIntHash, targetDifficulty, nonce)
 		if bigIntHash.Cmp(targetDifficulty) <= 0 {
-			fmt.Printf("%d ", m.ID)
+			// fmt.Printf("%d ", m.ID)
 			node.Hash = hash
 			node.Nonce = nonce
-
-			chSolved <- node
-			return
+			return true
 		}
 	}
-	return
+	return false
 }
 
-// Mine Yes, let's mining
-func Mine() {
-	fmt.Println("Mining ...")
+// Start let's mining
+func Start() {
+	fmt.Println("Start Mining ...")
 	genesisBlock := blockchain.GetGenesisBlock()
 	fmt.Println("Genesis Block: ", genesisBlock.Height, genesisBlock.Version, genesisBlock.Bits, genesisBlock.Nonce)
 
@@ -54,24 +49,15 @@ func Mine() {
 
 	for {
 		nextBlock := prevBlock.GenerateNextBlock()
-
-		miner1 := Miner{ID: 1, chNewBlockHeight: make(chan uint32)}
-
-		go miner1.solveBlock(nextBlock)
-
 		startTime := time.Now()
-		solvedBlock, ok := <-chSolved
+		solvedBlock := solveBlock(nextBlock)
 		endTime := time.Now()
 
-		if !ok {
-			fmt.Println("not find ")
-		}
-
-		if solvedBlock != nil {
+		if solvedBlock {
 			elapsedTime := endTime.Sub(startTime).Seconds()
-			hashPower := float64(solvedBlock.Nonce) / (elapsedTime * 1000 * 1000)
-			fmt.Printf("%s Height: %d Version: %b Bits: %x ElapsedTime: %.3fs HashPower: %.2f MH Nonce %d \n", solvedBlock.Hash, solvedBlock.Height, solvedBlock.Version, solvedBlock.Bits, elapsedTime, hashPower, solvedBlock.Nonce)
-			prevBlock = solvedBlock
+			hashPower := float64(nextBlock.Nonce) / (elapsedTime * 1000 * 1000)
+			fmt.Printf("%s Height: %d Version: %b Bits: %x ElapsedTime: %.3fs HashPower: %.2f MH Nonce %d \n", nextBlock.Hash, nextBlock.Height, nextBlock.Version, nextBlock.Bits, elapsedTime, hashPower, nextBlock.Nonce)
+			prevBlock = nextBlock
 		}
 	}
 }

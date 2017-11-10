@@ -7,5 +7,5 @@ import (
 
 func main() {
 	fmt.Println("Hello Versionbits")
-	mining.Mine()
+	mining.Start()
 }
