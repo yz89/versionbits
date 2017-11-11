@@ -10,14 +10,14 @@ type BlockNode struct {
 	Parent     *BlockNode
 	Hash       chainhash.Hash
 	MerkleRoot chainhash.Hash
-	Height     uint32
+	Height     int32
 	Version    uint32
 	Timestamp  int64
 	Nonce      uint32
 	Bits       uint32
 }
 
-func initBlockNode(node *BlockNode, blockHeader *BlockHeader, height uint32) {
+func initBlockNode(node *BlockNode, blockHeader *BlockHeader, height int32) {
 	*node = BlockNode{
 		Hash:       blockHeader.HashBlock(),
 		MerkleRoot: blockHeader.MerkleRoot,
@@ -29,7 +29,7 @@ func initBlockNode(node *BlockNode, blockHeader *BlockHeader, height uint32) {
 	}
 }
 
-func newBlockNode(blockHeader *BlockHeader, height uint32) *BlockNode {
+func newBlockNode(blockHeader *BlockHeader, height int32) *BlockNode {
 	var node BlockNode
 	initBlockNode(&node, blockHeader, height)
 	return &node
@@ -50,7 +50,7 @@ func (node *BlockNode) Header() *BlockHeader {
 	}
 }
 
-func (node *BlockNode) Ancestor(height uint32) *BlockNode {
+func (node *BlockNode) Ancestor(height int32) *BlockNode {
 	if height < 0 || height > node.Height {
 		return nil
 	}
@@ -62,7 +62,7 @@ func (node *BlockNode) Ancestor(height uint32) *BlockNode {
 	return n
 }
 
-func (node *BlockNode) RelativeAncestor(distance uint32) *BlockNode {
+func (node *BlockNode) RelativeAncestor(distance int32) *BlockNode {
 	return node.Ancestor(node.Height - distance)
 }
 
