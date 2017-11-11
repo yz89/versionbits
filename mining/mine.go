@@ -44,7 +44,6 @@ func solveBlock(node *blockchain.BlockNode, ticker *time.Ticker) bool {
 		hash := header.HashBlock()
 		bigIntHash := blockchain.HashToBig(&hash)
 		if bigIntHash.Cmp(targetDifficulty) <= 0 {
-			// fmt.Printf("%d ", m.ID)
 			node.Hash = hash
 			node.Nonce = nonce
 			return true
@@ -53,10 +52,11 @@ func solveBlock(node *blockchain.BlockNode, ticker *time.Ticker) bool {
 	return false
 }
 
-func mine(minerID uint32) {
+func mine(minerID uint32, version uint32) {
 	for {
 		bestBlock := chain.Tip()
 		nextBlock := bestBlock.GenerateNextBlock()
+		nextBlock.Version = version
 		ticker := time.NewTicker(100 * time.Millisecond)
 
 		startTime := time.Now()
@@ -86,10 +86,10 @@ func Start() {
 
 	wg.Add(1)
 
-	go mine(1)
-	go mine(2)
-	go mine(3)
-	go mine(4)
+	go mine(1, 1)
+	go mine(2, 2)
+	go mine(3, 3)
+	go mine(4, 4)
 
 	wg.Wait()
 }

@@ -36,8 +36,7 @@ func newBlockNode(blockHeader *BlockHeader, height uint32) *BlockNode {
 }
 
 func (node *BlockNode) Header() *BlockHeader {
-	zeroHash := chainhash.Hash{}
-	prevHash := zeroHash
+	prevHash := chainhash.Hash{}
 	if node.Parent != nil {
 		prevHash = node.Parent.Hash
 	}
