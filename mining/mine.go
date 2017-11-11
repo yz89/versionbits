@@ -12,10 +12,8 @@ const (
 )
 
 var (
-	chSolved   = make(chan *blockchain.BlockNode)
-	chNewBlock = make(chan uint32)
-	chain      blockchain.Chain
-	wg         sync.WaitGroup
+	chain blockchain.Chain
+	wg    sync.WaitGroup
 )
 
 type Miner struct {

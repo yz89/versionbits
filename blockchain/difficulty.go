@@ -12,10 +12,10 @@ import (
 
 const (
 	// one block timespan
-	blockTimespan = 1
+	blockTimespan = 10
 
 	// blocks count in one retarget
-	blocksPerRetarget = 100
+	blocksPerRetarget = 10
 
 	// adjust factor
 	adjustFactor = 4
