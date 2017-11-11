@@ -35,8 +35,8 @@ var (
 	//
 	// The miner confirmation window is defined as:
 	//   target proof of work timespan / target proof of work spacing
-	RuleChangeActivationThreshold = 1916 // 95% of MinerConfirmationWindow
-	MinerConfirmationWindow       = 2016 //
+	RuleChangeActivationThreshold = 9  // 90% of MinerConfirmationWindow
+	MinerConfirmationWindow       = 10 //
 	Deployments                   = []ConsensusDeployment{
 		DeploymentTestDummy: {
 			BitNumber:  28,
@@ -70,7 +70,7 @@ var (
 	MinerDeploymentMap = map[uint32][]ConsensusDeployment{
 		Miner1: Deployments,
 		Miner2: Deployments,
-		Miner3: Deployments1,
+		Miner3: Deployments,
 		Miner4: Deployments1,
 	}
 )

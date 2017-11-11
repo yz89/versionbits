@@ -54,7 +54,7 @@ func mine(minerID uint32) {
 	for {
 		bestBlock := chain.Tip()
 		nextBlock := bestBlock.GenerateNextBlock()
-		nextBlock.Version = blockchain.GetNextVersion(minerID)
+		nextBlock.Version = blockchain.GetNextVersion(minerID, bestBlock)
 		ticker := time.NewTicker(100 * time.Millisecond)
 
 		startTime := time.Now()
