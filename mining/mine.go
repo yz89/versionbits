@@ -50,11 +50,11 @@ func solveBlock(node *blockchain.BlockNode, ticker *time.Ticker) bool {
 	return false
 }
 
-func mine(minerID uint32, version uint32) {
+func mine(minerID uint32) {
 	for {
 		bestBlock := chain.Tip()
 		nextBlock := bestBlock.GenerateNextBlock()
-		nextBlock.Version = version
+		nextBlock.Version = blockchain.GetNextVersion(minerID)
 		ticker := time.NewTicker(100 * time.Millisecond)
 
 		startTime := time.Now()
@@ -66,7 +66,7 @@ func mine(minerID uint32, version uint32) {
 			if ok {
 				elapsedTime := endTime.Sub(startTime).Seconds()
 				hashPower := float64(nextBlock.Nonce) / (elapsedTime * 1000 * 1000)
-				fmt.Printf("%d %s Height: %d Version: %b Bits: %x ElapsedTime: %.3fs HashPower: %.2f MH Nonce %d \n", minerID, nextBlock.Hash, nextBlock.Height, nextBlock.Version, nextBlock.Bits, elapsedTime, hashPower, nextBlock.Nonce)
+				fmt.Printf("%d %s Height: %d Version: %x Bits: %x ElapsedTime: %.3fs HashPower: %.2f MH Nonce %d \n", minerID, nextBlock.Hash, nextBlock.Height, nextBlock.Version, nextBlock.Bits, elapsedTime, hashPower, nextBlock.Nonce)
 			} else {
 				fmt.Printf("%d %s Height: %d Abandon!! \n", minerID, nextBlock.Hash, nextBlock.Height)
 			}
@@ -84,10 +84,10 @@ func Start() {
 
 	wg.Add(1)
 
-	go mine(1, 1)
-	go mine(2, 2)
-	go mine(3, 3)
-	go mine(4, 4)
+	go mine(blockchain.Miner1)
+	go mine(blockchain.Miner2)
+	go mine(blockchain.Miner3)
+	go mine(blockchain.Miner4)
 
 	wg.Wait()
 }
