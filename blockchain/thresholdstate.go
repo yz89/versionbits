@@ -35,6 +35,33 @@ func (t ThresholdState) String() string {
 	return fmt.Sprintf("Unknown ThresholdState (%d)", int(t))
 }
 
+// thresholdConditionChecker provides a generic interface that is invoked to
+// determine when a consensus rule change threshold should be changed.
+type thresholdConditionChecker interface {
+	// BeginTime returns the unix timestamp for the median block time after
+	// which voting on a rule change starts (at the next window).
+	BeginTime() uint64
+
+	// EndTime returns the unix timestamp for the median block time after
+	// which an attempted rule change fails if it has not already been
+	// locked in or activated.
+	EndTime() uint64
+
+	// RuleChangeActivationThreshold is the number of blocks for which the
+	// condition must be true in order to lock in a rule change.
+	RuleChangeActivationThreshold() uint32
+
+	// MinerConfirmationWindow is the number of blocks in each threshold
+	// state retarget window.
+	MinerConfirmationWindow() uint32
+
+	// Condition returns whether or not the rule change activation condition
+	// has been met.  This typically involves checking whether or not the
+	// bit assocaited with the condition is set, but can be more complex as
+	// needed.
+	Condition(*BlockNode) (bool, error)
+}
+
 // thresholdStateCache provides a type to cache the threshold states of each
 // threshold window for a set of IDs.
 type thresholdStateCache struct {
@@ -66,7 +93,7 @@ func newThresholdCaches(numCaches uint32) []thresholdStateCache {
 	return caches
 }
 
-func thresholdState(prevNode *BlockNode) (ThresholdState, error) {
+func thresholdState(prevNode *BlockNode, checker thresholdConditionChecker) (ThresholdState, error) {
 
 	confirmationWindow := int32(MinerConfirmationWindow)
 	if prevNode == nil || (prevNode.Height+1) < confirmationWindow {
@@ -87,8 +114,68 @@ func thresholdState(prevNode *BlockNode) (ThresholdState, error) {
 	for neededNum := len(neededStates) - 1; neededNum >= 0; neededNum-- {
 		prevNode := neededStates[neededNum]
 
-		fmt.Printf("%d ", prevNode.Height)
+		switch state {
+		case ThresholdDefined:
+			// The deployment of the rule change fails if it expires
+			// before it is accepted and locked in.
+			medianTime := prevNode.CalcPastMedianTime()
+			medianTimeUnix := uint64(medianTime.Unix())
+			if medianTimeUnix >= checker.EndTime() {
+				state = ThresholdFailed
+				break
+			}
+
+			// The state for the rule moves to the started state
+			// once its start time has been reached (and it hasn't
+			// already expired per the above).
+			if medianTimeUnix >= checker.BeginTime() {
+				state = ThresholdStarted
+			}
+
+		case ThresholdStarted:
+			// The deployment of the rule change fails if it expires
+			// before it is accepted and locked in.
+			medianTime := prevNode.CalcPastMedianTime()
+			if uint64(medianTime.Unix()) >= checker.EndTime() {
+				state = ThresholdFailed
+				break
+			}
+
+			// At this point, the rule change is still being voted
+			// on by the miners, so iterate backwards through the
+			// confirmation window to count all of the votes in it.
+			var count uint32
+			countNode := prevNode
+			for i := int32(0); i < confirmationWindow; i++ {
+				condition, err := checker.Condition(countNode)
+				if err != nil {
+					return ThresholdFailed, err
+				}
+				if condition {
+					count++
+				}
+
+				// Get the previous block node.
+				countNode = countNode.Parent
+			}
+
+			// The state is locked in if the number of blocks in the
+			// period that voted for the rule change meets the
+			// activation threshold.
+			if count >= checker.RuleChangeActivationThreshold() {
+				state = ThresholdLockedIn
+			}
+
+		case ThresholdLockedIn:
+			// The new rule becomes active when its previous state
+			// was locked in.
+			state = ThresholdActive
+
+		// Nothing to do if the previous state is active or failed since
+		// they are both terminal states.
+		case ThresholdActive:
+		case ThresholdFailed:
+		}
 	}
-	fmt.Println()
 	return state, nil
 }

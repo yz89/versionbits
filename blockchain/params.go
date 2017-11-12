@@ -3,6 +3,10 @@ package blockchain
 const (
 	// DefaultBits 默认bits，越小难度越大
 	DefaultBits = uint32(0x20000009)
+
+	// medianTimeBlocks is the number of previous blocks which should be
+	// used to calculate the median time used to validate block timestamps.
+	medianTimeBlocks = 11
 )
 
 const (

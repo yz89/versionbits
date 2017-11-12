@@ -2,6 +2,7 @@ package blockchain
 
 import (
 	"math/rand"
+	"sort"
 	"time"
 	"versionbits/chainhash"
 )
@@ -64,6 +65,29 @@ func (node *BlockNode) Ancestor(height int32) *BlockNode {
 
 func (node *BlockNode) RelativeAncestor(distance int32) *BlockNode {
 	return node.Ancestor(node.Height - distance)
+}
+
+func (node *BlockNode) CalcPastMedianTime() time.Time {
+	// Create a slice of the previous few block timestamps used to calculate
+	// the median per the number defined by the constant medianTimeBlocks.
+	timestamps := make([]int64, medianTimeBlocks)
+	numNodes := 0
+	iterNode := node
+	for i := 0; i < medianTimeBlocks && iterNode != nil; i++ {
+		timestamps[i] = iterNode.Timestamp
+		numNodes++
+
+		iterNode = iterNode.Parent
+	}
+
+	// Prune the slice to the actual number of available timestamps which
+	// will be fewer than desired near the beginning of the block chain
+	// and sort them.
+	timestamps = timestamps[:numNodes]
+	sort.Sort(timeSorter(timestamps))
+
+	medianTimestamp := timestamps[numNodes/2]
+	return time.Unix(medianTimestamp, 0)
 }
 
 func (node *BlockNode) GenerateNextBlock() *BlockNode {
