@@ -13,7 +13,7 @@ type BlockNode struct {
 	MerkleRoot chainhash.Hash
 	Height     int32
 	Version    uint32
-	Timestamp  int64
+	Timestamp  time.Time
 	Nonce      uint32
 	Bits       uint32
 }
@@ -74,7 +74,7 @@ func (node *BlockNode) CalcPastMedianTime() time.Time {
 	numNodes := 0
 	iterNode := node
 	for i := 0; i < medianTimeBlocks && iterNode != nil; i++ {
-		timestamps[i] = iterNode.Timestamp
+		timestamps[i] = iterNode.Timestamp.Unix()
 		numNodes++
 
 		iterNode = iterNode.Parent
@@ -101,7 +101,7 @@ func (node *BlockNode) GenerateNextBlock() *BlockNode {
 		PrevBlock:  node.Hash,
 		MerkleRoot: chainhash.HashH(transactions),
 		Version:    0,
-		Timestamp:  time.Now().Unix(),
+		Timestamp:  time.Unix(time.Now().Unix(), 0),
 		Nonce:      0,
 		Bits:       bits,
 	}
@@ -118,7 +118,7 @@ func GetGenesisBlock() *BlockNode {
 		PrevBlock:  zeroHash,
 		MerkleRoot: zeroHash,
 		Version:    0,
-		Timestamp:  time.Now().Unix(),
+		Timestamp:  time.Unix(time.Now().Unix(), 0),
 		Nonce:      0,
 		Bits:       DefaultBits,
 	}

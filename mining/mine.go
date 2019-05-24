@@ -85,9 +85,9 @@ func Start() {
 	wg.Add(1)
 
 	go mine(blockchain.Miner1)
-	go mine(blockchain.Miner2)
-	go mine(blockchain.Miner3)
-	go mine(blockchain.Miner4)
+	// go mine(blockchain.Miner2)
+	// go mine(blockchain.Miner3)
+	// go mine(blockchain.Miner4)
 
 	wg.Wait()
 }

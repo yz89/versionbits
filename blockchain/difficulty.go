@@ -159,7 +159,7 @@ func CalcNextRequiredDifficulty(lastNode *BlockNode) uint32 {
 		return 0
 	}
 
-	actualTimespan := lastNode.Timestamp - firstNode.Timestamp
+	actualTimespan := lastNode.Timestamp.Unix() - firstNode.Timestamp.Unix()
 	adjustedTimespan := actualTimespan
 	if adjustedTimespan < minRetargetTimespan {
 		adjustedTimespan = minRetargetTimespan
@@ -173,8 +173,8 @@ func CalcNextRequiredDifficulty(lastNode *BlockNode) uint32 {
 
 	newTargetBits := BigToCompact(newTargetDifficultly)
 
-	fmt.Printf("Adjust Difficulty!! Height: %d->%d ActualTimespan: %ds Diff: %s Bits: %x \n",
-		firstNode.Height, lastNode.Height, actualTimespan, newTargetDifficultly.String(), newTargetBits)
+	fmt.Printf("Adjust Difficulty!! Height: %d->%d ActualTimespan: %ds Target: %s Bits: %x \n",
+		firstNode.Height, lastNode.Height, actualTimespan, fmt.Sprintf("%x", newTargetDifficultly), newTargetBits)
 
 	return newTargetBits
 }
