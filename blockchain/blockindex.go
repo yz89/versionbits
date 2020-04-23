@@ -20,7 +20,7 @@ type BlockNode struct {
 
 func initBlockNode(node *BlockNode, blockHeader *BlockHeader, height int32) {
 	*node = BlockNode{
-		Hash:       blockHeader.HashBlock(),
+		Hash:       blockHeader.Hash(),
 		MerkleRoot: blockHeader.MerkleRoot,
 		Height:     height,
 		Version:    blockHeader.Version,

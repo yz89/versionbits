@@ -39,7 +39,7 @@ func solveBlock(node *blockchain.BlockNode, ticker *time.Ticker) bool {
 		}
 
 		header.Nonce = nonce
-		hash := header.HashBlock()
+		hash := header.Hash()
 		bigIntHash := blockchain.HashToBig(&hash)
 		if bigIntHash.Cmp(targetDifficulty) <= 0 {
 			node.Hash = hash

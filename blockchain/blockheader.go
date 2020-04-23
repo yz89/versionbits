@@ -26,8 +26,8 @@ func (b BlockHeader) serialize() []byte {
 	return buf[:]
 }
 
-func (b BlockHeader) HashBlock() chainhash.Hash {
+func (b BlockHeader) Hash() chainhash.Hash {
 	blockBuf := b.serialize()
-	hash := chainhash.HashH(blockBuf)
+	hash := chainhash.DoubleHashH(blockBuf)
 	return hash
 }
